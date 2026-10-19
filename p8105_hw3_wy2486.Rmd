@@ -1,0 +1,15 @@
+---
+title: "P8105 Homework 3"
+author: "By Wenda Yoanda, UNI:wy2486" 
+output: github_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(p8105.datasets)
+library(hexbin)
+library(patchwork)
+
+data("ny_noaa")
+```
+
