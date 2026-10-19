@@ -54,3 +54,98 @@ ny_noaa_clean = ny_noaa_df |>
     prcp = prcp / 10
   )
 ```
+
+### Most Commonly Observed Snowfall Values
+
+I excluded missing snowfall observations using `drop_na(snow)` to identify the 10 most commonly recorded snowfall values.
+
+```{r}
+ny_noaa_clean |>
+  drop_na(snow) |>
+  count(snow, sort = TRUE) |>
+  head(10)
+```
+
+**Observations and Interpretations:**
+
+After removing missing values (NA), the most common snowfall value is **0 mm (2,008,508 observations)**, which makes sense because it does not snow every day. Among nonzero snowfall values, 25 mm, 13 mm, and 51 mm are the most common, possibly because snowfall measurements are rounded or converted from inches to millimeters.
+
+### Average Maximum Temperature in January and July
+
+I calculated the average maximum temperature (`tmax`) for January and July at each weather station across years using `group_by()` and `summarize()`. I then created a two-panel plot to compare temperature patterns between the two months.
+
+```{r message=FALSE, warning=FALSE}
+ny_noaa_clean |>
+  filter(month %in% c(1, 7)) |>
+  drop_na(tmax) |>
+  group_by(id, year, month) |>
+  summarize(
+    mean_tmax = mean(tmax),
+    .groups = "drop"
+  ) |>
+  mutate(
+    month = factor(
+      month,
+      levels = c(1, 7),
+      labels = c("January", "July")
+    )
+  ) |>
+  ggplot(aes(x = year, y = mean_tmax, group = id)) +
+  geom_line(alpha = 0.3) +
+  geom_point(alpha = 0.3, size = 0.5) +
+  facet_grid(. ~ month) +
+  labs(
+    title = "Average Maximum Temperature in January and July",
+    x = "Year",
+    y = "Average Maximum Temperature (°C)"
+  ) +
+  theme_minimal()
+```
+The average maximum temperature in January is consistently lower than in July across weather stations. January temperatures generally range from −10°C to 10°C, while July temperatures are mostly concentrated between 20°C and 32°C. There is some variation across stations, although their temperature patterns generally follow similar year-to-year fluctuations. No clear overall increasing or decreasing trend is observed. Potential outliers include an unusually low January temperature around 1983 (approximately −13°C) and an unusually low July temperature around 1987 (approximately 14°C). 
+
+
+### Temperature Relationship and Snowfall Distribution
+
+The first panel examines the relationship between maximum (`tmax`) and minimum (`tmin`) temperatures. I used `geom_hex()` instead of a scatterplot to reduce overplotting due to the large number of observations.
+
+The second panel shows the distribution of snowfall measurements greater than `0` mm and less than `100` mm separately for each year using boxplots.
+
+```{r message=FALSE, warning=FALSE, fig.width=12, fig.height=5}
+library(patchwork)
+
+ggp_temp = ny_noaa_clean |>
+  drop_na(tmax, tmin) |>
+  ggplot(aes(x = tmin, y = tmax)) +
+  geom_hex() +
+  labs(
+    title = "Maximum vs Minimum Temperature",
+    x = "Minimum Temperature (°C)",
+    y = "Maximum Temperature (°C)"
+  ) +
+  theme_minimal()
+
+ggp_snow = ny_noaa_clean |>
+  filter(snow > 0, snow < 100) |>
+  ggplot(aes(x = factor(year), y = snow)) +
+  geom_boxplot() +
+  labs(
+    title = "Snowfall Distribution by Year",
+    x = "Year",
+    y = "Snowfall (mm)"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 90, hjust = 1)
+  )
+
+ggp_temp + ggp_snow
+```
+
+**Observations and Interpretations:**
+
+1. **Maximum vs. Minimum Temperature:** There is a strong positive relationship between minimum and maximum temperatures. As minimum temperature increases, maximum temperature generally increases as well. Most observations are concentrated around minimum temperatures of 0–25°C and maximum temperatures of 5–30°C, with a few extreme observations outside these ranges.
+
+2. **Snowfall Distribution by Year:** Snowfall distributions appear relatively similar across most years, with median snowfall values around 25 mm and upper quartiles around 50 mm. However, some years show greater variability, particularly in the later years. Several high snowfall observations close to 100 mm are also observed.
+
+Overall, the first plot shows a clear positive relationship between minimum and maximum temperature, while the second plot suggests that snowfall distributions remain relatively consistent across years, with some differences in variability and extreme values.
+
