@@ -209,5 +209,134 @@ nhanes_tidy_df = nhanes_df |>
   )
 
 ```
+### Demographic Characteristics
 
+First, I created a table showing the number of men and women in each education category. I used `distinct()` to ensure that each participant was counted only once.
+
+```{r message=FALSE, warning=FALSE}
+nhanes_tidy_df |>
+  distinct(seqn, sex, education) |>
+  count(education, sex) |>
+  pivot_wider(
+    names_from = sex,
+    values_from = n
+  ) |>
+  knitr::kable(
+    caption = "Number of Participants by Education and Sex"
+  )
+```
+
+**Observations and Interpretations:**
+
+Participants with more than a high school education form the largest group (115), followed by high school equivalent (58) and less than high school (55). The number of men and women is relatively balanced, except in the high school equivalent group, where men (35) outnumber women (23).
+
+### Age Distribution by Sex and Education
+
+Next, I created density plots to compare the age distributions of men and women across education levels.
+
+```{r message=FALSE, warning=FALSE}
+nhanes_tidy_df |>
+  distinct(seqn, sex, age, education) |>
+  ggplot(aes(x = age, fill = sex)) +
+  geom_density(alpha = 0.4) +
+  facet_grid(. ~ education) +
+  labs(
+    title = "Age Distribution by Sex and Education",
+    x = "Age (Years)",
+    y = "Density",
+    fill = "Sex"
+  ) +
+  theme_minimal()
+```
+**Observation and Interpretation:**
+
+1. **Less than high school:** Men and women have relatively similar age distributions, with both showing higher densities around ages 65–75. Men also have a smaller peak around their 40s, while women have a dip around their 50s.
+
+2. **High school equivalent:** The distributions fluctuate. Men show peaks around ages 30 and 60, while women have a more pronounced peak around age 70.
+
+3. **More than high school:** Both sexes have relatively high densities at younger ages, particularly women around age 30. The density generally decreases toward older ages, although there is a smaller increase around age 60.
+
+Overall, age distributions vary across the three education categories. Participants with less than a high school education tend to have higher age densities among older adults, while those with more than a high school education show higher densities among younger adults. The high school equivalent group shows more fluctuations, with some differences between men and women. However, the age distributions overlap considerably across all three education categories
+
+### Total Daily Activity by Age
+
+I calculated total daily activity by summing the minute-level MIMS measurements for each participant using `group_by()` and `summarize()`.
+
+```{r message=FALSE, warning=FALSE}
+nhanes_total_df = nhanes_tidy_df |>
+  group_by(seqn, sex, age, bmi, education) |>
+  summarize(
+    total_activity = sum(mims, na.rm = TRUE),
+    .groups = "drop"
+  )
+```
+
+I plotted total activity against age, using color to distinguish men and women and separate panels for each education category. Smooth trend lines were added to examine differences in activity patterns by age.
+
+```{r message=FALSE, warning=FALSE}
+nhanes_total_df |>
+  ggplot(aes(x = age, y = total_activity, color = sex)) +
+  geom_point(alpha = 0.5) +
+  geom_smooth(se = FALSE) +
+  facet_grid(. ~ education) +
+  labs(
+    title = "Total Daily Activity by Age, Sex, and Education",
+    x = "Age (Years)",
+    y = "Total Daily Activity (MIMS)",
+    color = "Sex"
+  ) +
+  theme_minimal()
+```
+**Observations and Interpretations:**
+
+1. **Less than high school:** Total daily activity generally decreases with age for both men and women. Men show a noticeable increase around age 60 before declining, while women's activity decreases more steadily after age 50.
+
+2. **High school equivalent:** Total daily activity initially increases, peaking around ages 35–40, particularly among women. Activity then generally decreases with age, although some fluctuations are observed around ages 60–70.
+
+3. **More than high school:** Total daily activity remains relatively stable during early and middle adulthood, with slight fluctuations. Women show a small increase around age 60, while men show a slight increase around ages 50–60. Both groups show decreasing activity in older adulthood.
+
+Overall, total daily activity generally declines with age, particularly among older participants. Although the patterns differ somewhat across education categories, there is no clear, consistent difference between men and women across all ages and education levels.One potential outlier is observed among men with more than a high school education, where a participant around age 30 has total daily activity close to zero.
+
+
+### 24-Hour Activity Patterns
+
+I calculated the average MIMS value for each minute of the day, grouped by sex and education level. I then plotted the mean activity patterns over 24 hours.
+
+```{r message=FALSE, warning=FALSE}
+nhanes_time_df = nhanes_tidy_df |>
+  group_by(education, sex, minute) |>
+  summarize(
+    mean_mims = mean(mims, na.rm = TRUE),
+    .groups = "drop"
+  ) |>
+  mutate(
+    hour = (minute - 1) / 60
+  )
+
+nhanes_time_df |>
+  ggplot(aes(x = hour, y = mean_mims, color = sex)) +
+  geom_line(alpha = 0.5) +
+  geom_smooth(se = FALSE) +
+  facet_grid(. ~ education) +
+  labs(
+    title = "24-Hour Activity Patterns by Education and Sex",
+    x = "Hour of Day",
+    y = "Average MIMS",
+    color = "Sex"
+  ) +
+  scale_x_continuous(
+    breaks = c(0, 6, 12, 18, 24)
+  ) +
+  theme_minimal()
+```
+
+**Observations and Interpretations:**
+
+1. **Less than high school:** Men and women show similar activity patterns throughout the day. Average MIMS is lowest between midnight and approximately 6 AM, then increases sharply in the morning and peaks around 12 PM. Activity gradually decreases throughout the afternoon and evening, with a sharper decline toward midnight.
+
+2. **High school equivalent:** Men and women also show similar daily activity patterns. Average MIMS is lowest during the early morning hours, increases after approximately 6 AM, and reaches higher levels between 10 AM and 6 PM before declining in the evening. Women generally have slightly higher activity levels than men during the daytime.
+
+3. **More than high school:** Both men and women follow similar patterns, with low activity overnight and a sharp increase in the morning. Activity remains relatively high between 10 AM and 7 PM before decreasing toward midnight. Women generally have higher average MIMS than men during the daytime.
+
+Overall, the three education categories show similar 24-hour activity patterns, with low activity overnight, increasing activity in the morning, and higher activity during the daytime before declining at night. However, participants with a high school equivalent education generally show lower average MIMS levels during the daytime compared with the other two education groups. Women also tend to have slightly higher daytime activity than men, particularly in the high school equivalent and more than high school groups.
 
