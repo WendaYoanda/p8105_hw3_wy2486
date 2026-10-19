@@ -340,3 +340,92 @@ nhanes_time_df |>
 
 Overall, the three education categories show similar 24-hour activity patterns, with low activity overnight, increasing activity in the morning, and higher activity during the daytime before declining at night. However, participants with a high school equivalent education generally show lower average MIMS levels during the daytime compared with the other two education groups. Women also tend to have slightly higher daytime activity than men, particularly in the high school equivalent and more than high school groups.
 
+## Problem 3: Citi Bike Dataset
+
+### Read and Clean Data
+
+I imported the four Citi Bike datasets from January and July 2020 and 2024, cleaned the variable names, and added year and month variables. I then combined all four datasets using `bind_rows()` and converted month, weekday, membership status, and bike type into factors with appropriate labels.
+
+```{r message=FALSE, warning=FALSE}
+# Read January 2020
+jan2020_df = read_csv(
+  "./data/Jan 2020 Citi.csv",
+  na = c("", "NA", ".")
+) |>
+  janitor::clean_names() |>
+  mutate(
+    year = 2020,
+    month = "January"
+  )
+
+# Read July 2020
+july2020_df = read_csv(
+  "./data/July 2020 Citi.csv",
+  na = c("", "NA", ".")
+) |>
+  janitor::clean_names() |>
+  mutate(
+    year = 2020,
+    month = "July"
+  )
+
+# Read January 2024
+jan2024_df = read_csv(
+  "./data/Jan 2024 Citi.csv",
+  na = c("", "NA", ".")
+) |>
+  janitor::clean_names() |>
+  mutate(
+    year = 2024,
+    month = "January"
+  )
+
+# Read July 2024
+july2024_df = read_csv(
+  "./data/July 2024 Citi.csv",
+  na = c("", "NA", ".")
+) |>
+  janitor::clean_names() |>
+  mutate(
+    year = 2024,
+    month = "July"
+  )
+
+# Combine all four datasets
+citibike_df = bind_rows(
+  jan2020_df,
+  july2020_df,
+  jan2024_df,
+  july2024_df
+) |>
+  mutate(
+    month = factor(
+      month,
+      levels = c("January", "July")
+    ),
+    weekdays = factor(
+      weekdays,
+      levels = c(
+        "Monday", "Tuesday", "Wednesday",
+        "Thursday", "Friday", "Saturday", "Sunday"
+      )
+    ),
+    member_casual = factor(
+      member_casual,
+      levels = c("casual", "member"),
+      labels = c("Casual", "Member")
+    ),
+    rideable_type = factor(
+      rideable_type,
+      levels = c("classic_bike", "electric_bike"),
+      labels = c("Classic", "Electric")
+    )
+  )
+
+skimr::skim(citibike_df)
+```
+The `citibike_df` dataset contains **99,485 observations** and **9 variables**, including ride ID (`ride_id`), bike type (`rideable_type`), day of the week (`weekdays`), ride duration (`duration`), starting and ending stations (`start_station_name`, `end_station_name`), membership status (`member_casual`), year, and month.
+
+The dataset is structured as a tibble with **3 character variables, 4 factor variables, and 2 numeric variables**. Each observation represents one Citi Bike ride.
+
+
