@@ -13,3 +13,44 @@ library(patchwork)
 data("ny_noaa")
 ```
 
+## Problem 1: NY NOAA Data
+
+### Explore the dataset
+```{r message=FALSE, warning=FALSE}
+skimr::skim(ny_noaa)
+```
+
+The `ny_noaa` dataset contains **2,595,176 observations** and **7 variables**. The dataset is structured as a tibble with **3 character variables, 3 numeric variables, and 1 date variable**.
+
+The variables include:
+
+- `id`: Weather station ID
+- `date`: Date of observation
+- `prcp`: Precipitation (tenths of mm)
+- `snow`: Snowfall (mm)
+- `snwd`: Snow depth (mm)
+- `tmax`: Maximum temperature (tenths of degrees C)
+- `tmin`: Minimum temperature (tenths of degrees C)
+
+**Missing data** are a substantial issue, particularly for temperature measurements. Approximately **43.71%** of observations are missing for both `tmax` and `tmin`. Snowfall (`snow`) also has **381,221 missing observations**, which could affect the analysis of weather patterns.
+
+### Clean the dataset
+I created separate variables for year, month, and day from the date variable. Temperature (tmax and tmin) and precipitation (prcp) were recorded in tenths of their respective units, so I divided them by 10 to convert them into degrees Celsius and millimeters. Snowfall (snow) was already recorded in millimeters, so no conversion was needed. 
+```{r message=FALSE, warning=FALSE}
+ny_noaa_df = ny_noaa |>
+  janitor::clean_names()
+
+ny_noaa_clean = ny_noaa_df |>
+  separate(
+    date,
+    into = c("year", "month", "day"),
+    sep = "-",
+    convert = TRUE,
+    remove = FALSE
+  ) |>
+  mutate(
+    tmax = as.numeric(tmax) / 10,
+    tmin = as.numeric(tmin) / 10,
+    prcp = prcp / 10
+  )
+```
