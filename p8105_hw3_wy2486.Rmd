@@ -149,3 +149,65 @@ ggp_temp + ggp_snow
 
 Overall, the first plot shows a clear positive relationship between minimum and maximum temperature, while the second plot suggests that snowfall distributions remain relatively consistent across years, with some differences in variability and extreme values.
 
+## Problem 2: Accelerometers Data
+
+### Read and Clean Data
+I imported and cleaned both datasets, excluded participants under 21 and those with missing demographic data, and converted sex and education into labeled factors. I then merged the datasets by participant ID (`seqn`) and used `pivot_longer()` to organize minute-level MIMS measurements into long format for analysis.
+```{r message=FALSE, warning=FALSE}
+# Read and clean accelerometer data
+accel_df =
+  read_csv(
+    file = "./data/nhanes_accel.csv",
+    na = c("", "NA", ".")
+  ) |>
+  janitor::clean_names()
+
+# Read and clean demographic data
+demo_df =
+  read_csv(
+    file = "./data/nhanes_covar.csv",
+    skip = 4,
+    na = c("", "NA", ".")
+  ) |>
+  janitor::clean_names()
+
+# Clean demographic data
+demo_clean = demo_df |>
+  filter(age >= 21) |>
+  drop_na() |>
+  mutate(
+    sex = factor(
+      sex,
+      levels = c(1, 2),
+      labels = c("Male", "Female")
+    ),
+    education = factor(
+      education,
+      levels = c(1, 2, 3),
+      labels = c(
+        "Less than high school",
+        "High school equivalent",
+        "More than high school"
+      )
+    )
+  )
+
+# Merge demographic and accelerometer data
+nhanes_df = demo_clean |>
+  inner_join(accel_df, by = "seqn")
+
+# Tidy accelerometer data into long format
+nhanes_tidy_df = nhanes_df |>
+  pivot_longer(
+    cols = min1:min1440,
+    names_to = "minute",
+    names_prefix = "min",
+    values_to = "mims"
+  ) |>
+  mutate(
+    minute = as.numeric(minute)
+  )
+
+```
+
+
